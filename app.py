@@ -1,46 +1,66 @@
-from operator import index
-import streamlit as st
-import plotly.express as px
-from pycaret.regression import setup, compare_models, pull, save_model, load_model
-import pandas_profiling
+import numpy as np
+import pickle
 import pandas as pd
-from streamlit_pandas_profiling import st_profile_report
-import os 
+import streamlit as st 
 
 
-with st.sidebar: 
-    st.image("https://www.onepointltd.com/wp-content/uploads/2020/03/inno2.png")
-    st.title("Auto ML APP")
-    choice = st.radio("Navigation", ["Upload","Profiling","Modelling", "Download"])
-    st.info("This project application helps you build and explore your data.")
 
-if choice == "Upload":
-    st.title("Upload Your Dataset")
-    file = st.file_uploader("Upload Your Dataset")
-    if file: 
-        df = pd.read_csv(file, index_col=None)
-        df.to_csv('dataset.csv', index=None)
-        st.dataframe(df)
+pickle_in = open("car price.pkl","rb")
+price_finder=pickle.load(pickle_in)
 
-if os.path.exists('./dataset.csv'): 
-    df = pd.read_csv('dataset.csv', index_col=None)
+#@app.route('/')
+def welcome():
+    return "Welcome All"
+
+#@app.route('/predict',methods=["Get"])
+def car_price_predictor(year,Present_Price,Kms_Driven,Fuel_Type,Seller_Type,Transmission,Owner):
+    
+    
    
-if choice == "Profiling": 
-    st.title("Exploratory Data Analysis")
-    profile_df = df.profile_report()
-    st_profile_report(profile_df)
+    prediction=price_finder.predict([[year,Present_Price,Kms_Driven,Fuel_Type,Seller_Type,Transmission,Owner]])
+    print(prediction)
+    return prediction
 
-if choice == "Modelling": 
-    chosen_target = st.selectbox('Choose the Target Column', df.columns)
-    if st.button('Run Modelling'): 
-        setup(df, target=chosen_target)
-        setup_df = pull()
-        st.dataframe(setup_df)
-        best_model = compare_models()
-        compare_df = pull()
-        st.dataframe(compare_df)
-        save_model(best_model, 'best_model')
 
-if choice == "Download": 
-    with open('best_model.pkl', 'rb') as f: 
-        st.download_button('Download Model', f, file_name="best_model.pkl")
+
+def main():
+    st.title("CAR PRICE PREDICTOR")
+    html_temp = """
+    <div style="background-color:tomato;padding:10px">
+    <h2 style="color:white;text-align:center;">Streamlit Car Price Prediction  ML App </h2>
+    </div>
+    """
+    st.markdown(html_temp,unsafe_allow_html=True)
+    year = st.text_input("year","Type Here")
+    Present_Price = st.text_input("Present_Price(in lacs)","Type Here")
+    Kms_Driven = st.text_input("Kms_Driven","Type Here")
+    Fuel_Type = st.selectbox("Fuel_Type",("Petrol","Diesel"))
+    if Fuel_Type=="Petrol":
+        Fuel_Type=0
+    else:
+        Fuel_Type=1
+    Seller_Type = st.selectbox("Seller_Type",("Dealer","Individual"))
+    if Seller_Type=="Dealer":
+        Seller_Type=0
+    else:
+        Seller_Type=1
+    Transmission = st.selectbox("Transmission",("Manual","Automatic"))
+    if Transmission=="Manual":
+        Transmission=0
+    else:
+        Transmission=1
+    Owner = st.text_input("Owner","Type Here")
+
+
+    result=0
+    if st.button("Predict"):
+        result=car_price_predictor(year,Present_Price,Kms_Driven,Fuel_Type,Seller_Type,Transmission,Owner)
+    st.success('The output is {} lacks'.format(result))
+    if st.button("About"):
+        st.text("Project Done by Abilash K")
+        st.text("Mail:kabilash1999@gmail.com")
+        st.text("Built with Streamlit")
+
+if __name__=='__main__':
+    main()
+    
